@@ -1,0 +1,53 @@
+---
+title: "Assignment 5"
+author: "Maggie Hsu"
+date: "`r Sys.Date()`"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+
+set.seed(8105) #set seed
+```
+Suppose you put n people in a room, and want to know the probability that at least two people share a birthday. For simplicity, we’ll assume there are no leap years (i.e. there are only 365 days) and that birthdays are uniformly distributed over the year (which is actually not the case).
+
+Write a function that, for a fixed group size, randomly draws “birthdays” for each person; checks whether there are duplicate birthdays in the group; and returns TRUE or FALSE based on the result.
+```{r problem 1 - function}
+#Let integers 1-365 represent dates from January 1st to December 31st (no leap days)
+b_days <- function(n) { #where n is the number of people in the group
+  birthdays <- sample(1:365,n,replace = TRUE)
+  result = (sum(duplicated(birthdays)) > 0) 
+  result
+} 
+```
+
+
+Next, run this function 10000 times for each group size between 2 and 50. For each group size, compute the probability that at least two people in the group will share a birthday by averaging across the 10000 simulation runs. 
+
+```{r problem 1 - group simulation}
+
+```
+
+Make a plot showing the probability as a function of group size, and comment on your results.
+```{r problem 1 - plot}
+
+```
+
+
+```{r problem 2}
+#Initialize elements
+n = 30
+mu = 0
+sigma = 5
+
+datasets <- x = rnorm(n, mean = mu, sd = sigma)
+
+
+
+```
+
+```{r problem 3}
+
+```
