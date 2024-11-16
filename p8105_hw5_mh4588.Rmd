@@ -114,15 +114,20 @@ This could be because as mu increases, the power also increases (where there are
 # Problem 3
 ```{r problem 3}
 homicide <- read_csv("./homicide-data.csv") #Import dataset
+
+#tulsa, al observation should be tulsa, ok
+which(homicide == "Tul-000769", arr.ind=TRUE) #find row number
+homicide[50810, 9] <- "OK"
+
 homicide =  mutate(city_state = paste(city, state, sep=', '), homicide) #establish city,state variable
 
-homicide |>
+unsolved = homicide |>
   group_by(city_state) |>
   summarize(
     total_cases = n(),
     total_unsolved = sum(disposition==c("Closed without arrest","Open/No arrest"))
   ) 
-  
+  unsolved
 ```
 
 ```{r baltimore}
@@ -137,4 +142,42 @@ baltimore_prop <- prop.test(nrow(baltimore_unsolved),nrow(baltimore), p = (nrow(
   broom::tidy() |> #pull estimate and confidence interval
     select(estimate, conf.low, conf.high)
 ```
-```{r iterate cities}
+```{r iterate cities, warning-FALSE}
+prop_sim = function(index) {
+  prop_out = vector("list", length = 4) #initialize 
+  total = filter(homicide, city_state==index)
+  unsolved_cases = filter(total, disposition==c("Closed without arrest","Open/No arrest")) 
+  
+  prop_test = prop.test(nrow(unsolved_cases),nrow(total),p = (nrow(unsolved_cases)/nrow(total))) |>
+  broom::tidy() |> #run prop test and extract relevant values
+  select(estimate, conf.low, conf.high)
+  
+  prop_out = tibble( #return output
+   city=index, prop_test
+  )
+    return(prop_out)
+  }
+```
+
+```{r iterate, warning=FALSE}
+#iterate across cities
+city_out = vector("list", 50) #initialize output
+
+for (i in 1:nrow(unsolved)) {
+  city = pull(unsolved, var = city_state)[i]
+  city_out[[i]] <- prop_sim(city)
+}
+
+city_out = bind_rows(city_out)
+```
+
+```{r create plot}
+city_out |>
+  ggplot(aes(x=reorder(city,estimate),y=estimate))+ #organized by increasing proportions 
+  geom_errorbar(aes(ymin=conf.low, ymax=conf.high))+
+  geom_boxplot()+
+  geom_point() + 
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  labs(title="Estimated Proportion of Unsolved Homicides in Major Cities", x="City", y="Estimated Proportion of Unsolved Homicide Rate")
+```
+
