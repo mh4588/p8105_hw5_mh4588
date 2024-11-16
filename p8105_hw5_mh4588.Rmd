@@ -53,44 +53,79 @@ shared_prob |>
 ```
 # Problem 2
 
-
-
 ```{r problem 2}
-#Initialize elements
-datasets = vector("list", length = 5000)
-mu = 0
-
+#Define function for simulation
 t_test_sim = function(mu) {
-for (i in 1:5000){
-  datasets[[i]] = rnorm(n=30, mean = mu, sd=5) #Generate datasets
-  t_test = broom::tidy(t.test(datasets[[i]], mu=0, conf.level=0.95)) #t-test dataset against mu=0 at a 0.95 confidence level
-  tibble(
-    mu_hat = t_test[1], #Extract mu-hat from the t-test summary
-    p_value = t_test[3] #Extract the p-value from the t-test
+  t_test_sim_out = vector("list", length = 5000) #initialize
+  
+  for (i in 1:5000){
+  datasets = rnorm(n=30, mean = mu, sd=5) #Generate datasets
+  
+  t_test = t.test(datasets, mu=0, conf.level=0.95) |>
+  broom::tidy() |> #t-test dataset against mu=0 at a 0.95 confidence level
+    select(estimate, p.value)
+  
+  t_test_sim_out[[i]] <- tibble(
+   mu=mu, t_test
   )
-}
+  }
+  return(bind_rows(t_test_sim_out))
 }
 
 #repeat for mu=0 and 1-6
-sim_results_df = 
-  expand_grid(
-    mu_range = c(0:6),
-    iter = 1:5000
-  ) |> 
-  mutate(
-    sim_results = map(mu_range, t_test_sim)
-  ) |> 
-  unnest(sim_results)
-
-```
-```{r plotting}
+sim_results_df = vector("list", 7)
+for (i in 0:6) {
+  sim_results_df[[i+1]] <- t_test_sim(i)
+}
+sim_results = bind_rows(sim_results_df) #final data frame
 
 ```
 
+```{r plot 1}
+sim_results |>
+  group_by(mu) |>
+  summarize(
+    power = sum(p.value<=0.05)/5000 #proportion of p-values less than or = 0.05 
+  ) |>
+  ggplot(aes(x=mu, y=power))+geom_point()+geom_line()+xlab("True Value of Mean mu")+ylab("Power")+labs(title="Relationship Between Statistical Power and True Mu Value") +  scale_x_continuous(breaks = seq(0, 6, by = 1)) #plot
+```
+
+```{r plot 2}
+sim_results |>
+  group_by(mu) |>
+  summarize(
+    avg_mu_hat = mean(estimate), #Average estimate of mu hat
+    avg_mu_hat_rejected = mean(estimate[p.value<=0.05])
+    ) |>
+ggplot()+
+  geom_line(aes(x=mu, y=avg_mu_hat, color="General Average Mu-Hat"))+
+  geom_line(aes(x=mu, y=avg_mu_hat_rejected, color="Average Mu-Hat for Rejected Values"))+
+  xlab("True Value of Mean mu")+
+  ylab("Average Estimate of mu hat")+
+  labs(title="Relationship Between Estimated and True Mu Value") + 
+  scale_x_continuous(breaks = seq(0, 6, by = 1)) + 
+  theme_classic()+ 
+  scale_colour_manual(breaks = c("General Average Mu-Hat","Average Mu-Hat for Rejected Values"), values = c("red", "blue"))
+```
+
+# Problem 3
 ```{r problem 3}
 homicide <- read_csv("./homicide-data.csv") #Import dataset
-homicide |>
-  mutate(city_state = paste(city,state, sep=', ')) #establish city,state variable
+homicide =  mutate(city_state = paste(city, state, sep=', '), homicide) #establish city,state variable
 
-#summarize within cities to obtain the total number of homicides and the number of unsolved homicides (those for which the disposition is “Closed without arrest” or “Open/No arrest”).
+homicide |>
+  group_by(city_state) |>
+  summarize(
+    total_cases = n(),
+    total_unsolved = sum(disposition==c("Closed without arrest","Open/No arrest"))
+  ) 
+  
+```
+
+```{r baltimore}
+baltimore <- filter(homicide, city=="Baltimore") #Filter dataset to only show Baltimore homicides
+baltimore_unsolved <- filter(baltimore, disposition==c("Closed without arrest","Open/No arrest"))
+
+baltimore_prop <- prop.test(nrow(baltimore_unsolved),nrow(baltimore), p = (nrow(baltimore_unsolved)/nrow(baltimore)))
+
 ```
