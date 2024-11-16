@@ -21,9 +21,6 @@ bday_matches <- function(n) { #where n is the number of people in the group
 } 
 ```
 
-
-Next, run this function 10000 times for each group size between 2 and 50. For each group size, compute the probability that at least two people in the group will share a birthday by averaging across the 10000 simulation runs. 
-
 ```{r problem 1 - group simulation}
 birthday_output = 
   expand_grid(
@@ -51,6 +48,8 @@ shared_prob |>
   geom_smooth(color = "red")
                           
 ```
+The probability of two people sharing a birthday increases as group number increases, but the rate of change decreases as group number increases. This probability approaches 1 when the group size is larger than 40, but does not reach 1. 
+
 # Problem 2
 
 ```{r problem 2}
@@ -89,6 +88,7 @@ sim_results |>
   ) |>
   ggplot(aes(x=mu, y=power))+geom_point()+geom_line()+xlab("True Value of Mean mu")+ylab("Power")+labs(title="Relationship Between Statistical Power and True Mu Value") +  scale_x_continuous(breaks = seq(0, 6, by = 1)) #plot
 ```
+Although power increases as mu increases, the amount of change is largest for the mean increasing from 1-2 and from 2-3. After mu=3, increases in mu have much less of an effect on power (and almost no effect from 4-5 and 5-6). 
 
 ```{r plot 2}
 sim_results |>
@@ -107,6 +107,9 @@ ggplot()+
   theme_classic()+ 
   scale_colour_manual(breaks = c("General Average Mu-Hat","Average Mu-Hat for Rejected Values"), values = c("red", "blue"))
 ```
+The average mu-hat is generally higher for the rejected values as compared to the overall average (especially from mu=0,1,2,3), but the overall average more closely reflects the true mean value of mu. The sample averages are approximately equal to the true mean value at mu=4,5,and 6 for both the rejected and overall values. 
+
+This could be because as mu increases, the power also increases (where there are more times the null is rejected) so the test is more likely to correctly reject the null hypothesis (therefore making the estimated mean of the samples closer to the actual mu-hat value)
 
 # Problem 3
 ```{r problem 3}
@@ -125,7 +128,13 @@ homicide |>
 ```{r baltimore}
 baltimore <- filter(homicide, city=="Baltimore") #Filter dataset to only show Baltimore homicides
 baltimore_unsolved <- filter(baltimore, disposition==c("Closed without arrest","Open/No arrest"))
+```
 
+```{r baltimore prop test}
 baltimore_prop <- prop.test(nrow(baltimore_unsolved),nrow(baltimore), p = (nrow(baltimore_unsolved)/nrow(baltimore)))
 
+ baltimore_prop |>
+  broom::tidy() |> #pull estimate and confidence interval
+    select(estimate, conf.low, conf.high)
 ```
+```{r iterate cities}
