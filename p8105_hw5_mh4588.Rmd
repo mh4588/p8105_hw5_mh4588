@@ -129,6 +129,7 @@ unsolved = homicide |>
   ) 
   unsolved
 ```
+The raw data consists of `r nrow(homicide)` rows and `r ncol(homicide)`columns. Although the dataset initially says there are 51 distinct cities, one of the observations is mislabeled as "Tulsa,AL" instead of "Tulsa, OK" which had to be cleaned--there are actually 50 major cities within the dataset. The dataset describes homicides across these cities with the victim name and demographics, along with the date, location, and conclusion of the case. 
 
 ```{r baltimore}
 baltimore <- filter(homicide, city=="Baltimore") #Filter dataset to only show Baltimore homicides
